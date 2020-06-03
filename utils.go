@@ -3,6 +3,7 @@ package WxService
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"log"
 	"math/rand"
 	"net"
@@ -48,6 +49,26 @@ func GeneSign(args map[string]interface{}, key string) string {
 	sign = strings.ToUpper(hex.EncodeToString(m.Sum(nil)))
 
 	return sign
+}
+
+// 校验签名
+func CheckSign(key string, params map[string]interface{}) (bool, error) {
+	var (
+		ok      bool
+		sign    string
+		newSign string
+	)
+
+	sign, ok = params["sign"].(string)
+	if !ok {
+		return false, errors.New("sign类型错误！")
+	}
+
+	delete(params, "sign")
+
+	newSign = GeneSign(params, key)
+
+	return newSign == sign, nil
 }
 
 func ParseMap(args map[string]interface{}) string {
