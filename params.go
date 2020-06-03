@@ -10,6 +10,10 @@ func NewParams() *Params {
 	}
 }
 
+func (p *Params) Values() map[string]interface{} {
+	return p.value
+}
+
 func (p *Params) SetString(key string, val string) *Params {
 	p.value[key] = val
 	return p
