@@ -6,7 +6,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
@@ -139,7 +138,6 @@ func (c *client) UnifiedOrder(p *Params) (prepayId string) {
 		return
 	}
 
-	log.Println(string(buf))
 	res, err = http.Post(url, "application/xml", bytes.NewReader(buf))
 	if err != nil {
 		c.err = err
@@ -158,7 +156,6 @@ func (c *client) UnifiedOrder(p *Params) (prepayId string) {
 		return
 	}
 
-	log.Println(resData)
 	if resData["return_code"] == nil || resData["return_msg"] == nil {
 		c.err = fmt.Errorf(ErrMsgWxRemote, "响应中没有return_code或return_msg！")
 		return
@@ -276,11 +273,20 @@ func (c *client) Refund(p *Params) {
 	)
 
 	// 签名
-	c.signParamMD5(p, c.ApiKey)
 
 	if c.IsSandBox {
+		param := NewParams()
+		param.SetString("mch_id", c.Client().MchID).
+			SetString("nonce_str", GeneNonceStr(32))
+
+		// 获取沙箱环境签名key
+		signKey := c.GetSandboxSignKey(param)
+
+		c.signParamMD5(p, signKey)
+
 		url = SandboxRefundUrl
 	} else {
+		c.signParamMD5(p, c.ApiKey)
 		url = RefundUrl
 	}
 
@@ -367,11 +373,19 @@ func (c *client) CloseOrder(p *Params) {
 	)
 
 	// 签名
-	c.signParamMD5(p, c.ApiKey)
-
 	if c.IsSandBox {
+		param := NewParams()
+		param.SetString("mch_id", c.Client().MchID).
+			SetString("nonce_str", GeneNonceStr(32))
+
+		// 获取沙箱环境签名key
+		signKey := c.GetSandboxSignKey(param)
+
+		c.signParamMD5(p, signKey)
+
 		url = SandboxCloseOrderUrl
 	} else {
+		c.signParamMD5(p, c.ApiKey)
 		url = CloseOrderUrl
 	}
 
@@ -381,7 +395,6 @@ func (c *client) CloseOrder(p *Params) {
 		return
 	}
 
-	log.Println("buf: ",string(buf))
 	res, err = http.Post(url, "application/xml", bytes.NewReader(buf))
 	if err != nil {
 		c.err = err
