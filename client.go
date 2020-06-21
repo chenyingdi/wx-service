@@ -14,6 +14,7 @@ type Client interface {
 	Err() error
 	Client() client                                                                           // 获取客户端实例的拷贝
 	Code2Session(code string) (openid string)                                                 // 获取openid
+	Oauth2(code string) (openid, at string)                                                   // 网页登录
 	UnifiedOrder(p *Params) (prepayId string)                                                 // 统一下单
 	Refund(p *Params)                                                                         // 退款
 	CloseOrder(p *Params)                                                                     // 关闭订单
@@ -95,6 +96,41 @@ func (c *client) Code2Session(code string) (openid string) {
 		c.err = fmt.Errorf(ErrMsgWxRemote, "获取openid失败！")
 	}
 
+	return
+}
+
+// web登录api
+func (c *client) Oauth2(code string) (openid, at string) {
+	var (
+		res  *http.Response
+		body []byte
+		ok   bool
+		data = make(map[string]interface{})
+	)
+	res, c.err = http.Get(fmt.Sprintf(Oauth2Url, c.AppID, c.AppSecret, code))
+	if c.err != nil {
+		return
+	}
+
+	body, c.err = ioutil.ReadAll(res.Body)
+	if c.err != nil {
+		return
+	}
+
+	c.err = json.Unmarshal(body, &data)
+	if c.err != nil {
+		return
+	}
+
+	openid, ok = data["openid"].(string)
+	if !ok {
+		c.err = fmt.Errorf(ErrMsgWxRemote, "获取openid失败！")
+	}
+
+	at, ok = data["access_token"].(string)
+	if !ok {
+		c.err = fmt.Errorf(ErrMsgWxRemote, "获取access_token失败！")
+	}
 	return
 }
 

@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	Oauth2Url                    = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code"
 	Code2SessionUrl              = "https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code"
 	UnifiedOrderUrl              = "https://api.mch.weixin.qq.com/pay/unifiedorder"
 	SandboxUnifiedOrderUrl       = "https://api.mch.weixin.qq.com/sandboxnew/pay/unifiedorder"
