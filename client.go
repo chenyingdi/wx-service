@@ -2,6 +2,7 @@ package WxService
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -16,7 +17,7 @@ type Client interface {
 	Code2Session(code string) (openid string)                                                 // 获取openid
 	Oauth2(code string) (openid, at string)                                                   // 网页登录
 	UnifiedOrder(p *Params) (prepayId string)                                                 // 统一下单
-	Refund(p *Params)                                                                         // 退款
+	Refund(p *Params, keyPath, certPath string)                                                    // 退款
 	CloseOrder(p *Params)                                                                     // 关闭订单
 	GetAccessToken() (accessToken string)                                                     // 获取access token
 	GetDailyRetain(accessToken, date string) (result map[string]interface{})                  // 获取日留存
@@ -295,13 +296,14 @@ func (c client) GetSandboxSignKey(p *Params) (signKey string) {
 }
 
 // 退款
-func (c *client) Refund(p *Params) {
+func (c *client) Refund(p *Params, keyPath, certPath string) {
 	var (
 		ok         bool
 		err        error
 		buf        []byte
 		res        *http.Response
 		resBody    []byte
+		cert       tls.Certificate
 		returnCode string
 		resultCode string
 		url        string
@@ -309,7 +311,6 @@ func (c *client) Refund(p *Params) {
 	)
 
 	// 签名
-
 	if c.IsSandBox {
 		param := NewParams()
 		param.SetString("mch_id", c.Client().MchID).
@@ -332,7 +333,21 @@ func (c *client) Refund(p *Params) {
 		return
 	}
 
-	res, err = http.Post(url, "application/xml", bytes.NewReader(buf))
+	cert, err = tls.LoadX509KeyPair(certPath, keyPath)
+	if err != nil {
+		c.err = err
+		return
+	}
+
+	cl := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{cert},
+			},
+		},
+	}
+
+	res, err = cl.Post(url, "application/xml", bytes.NewReader(buf))
 	if err != nil {
 		c.err = err
 		return

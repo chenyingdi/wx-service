@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
-	"log"
 	"math/rand"
 	"net"
 	"sort"
@@ -36,7 +35,6 @@ func GeneSign(args map[string]interface{}, key string) string {
 	)
 	// 1. 字典序排序
 	stringA = ParseMap(args)
-	log.Println(stringA)
 
 	// 2. 与key拼接得到stringSignTemp
 	if key != "" {
